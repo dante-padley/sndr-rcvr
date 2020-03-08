@@ -101,8 +101,7 @@ void mainLoop()
 	FILE* fp = fopen(recvFileName, "w");
 		
 	/* Error checks */
-	if(!fp)
-	{
+	if (!fp) {
 		perror("fopen");	
 		exit(-1);
 	}
@@ -118,8 +117,8 @@ void mainLoop()
      * "recvfile"
      */
 		 
-	if (msgrcv(msqid, &rcv_msg, sizeof(rcv_msg), SENDER_DATA_TYPE) == -1) {
-		perror("Error: receiver unable to receive message.")
+	if (msgrcv(msqid, &rcv_msg, sizeof(rcv_msg), SENDER_DATA_TYPE, 0) == -1) {
+		perror("Error: receiver unable to receive message.");
 		exit(-1);
 	}
 
@@ -133,14 +132,11 @@ void mainLoop()
 	
 	
 
-	while(msgSize != 0)
-	{	
+	while(msgSize != 0) {	
 		/* If the sender is not telling us that we are done, then get to work */
-		if(msgSize != 0)
-		{
+		if(msgSize != 0) {
 			/* Save the shared memory to file */
-			if(fwrite(sharedMemPtr, sizeof(char), msgSize, fp) < 0)
-			{
+			if(fwrite(sharedMemPtr, sizeof(char), msgSize, fp) < 0) {
 				perror("fwrite");
 			}
 
@@ -154,8 +150,8 @@ void mainLoop()
 			}
 			
 			// Check for message from sender.
-			if (msgrcv(msqid, &rcv_msg, sizeof(rcv_msg), SENDER_DATA_TYPE) == -1) {
-				perror("Error: receiver unable to receive message.")
+			if (msgrcv(msqid, &rcv_msg, sizeof(rcv_msg), SENDER_DATA_TYPE, 0) == -1) {
+				perror("Error: receiver unable to receive message.");
 				exit(-1);
 			}
 			
@@ -164,8 +160,7 @@ void mainLoop()
 			
 		}
 		/* We are done */
-		else
-		{
+		else {
 			/* Close the file */
 			fclose(fp);
 		}
@@ -181,8 +176,7 @@ void mainLoop()
  * @param msqid - the id of the message queue
  */
 
-void cleanUp(const int& shmid, const int& msqid, void* sharedMemPtr)
-{
+void cleanUp(const int& shmid, const int& msqid, void* sharedMemPtr) {
 	/* Detach from shared memory */
 	if (shmdt(sharedMemPtr) == -1) {
 		perror("Error: unable to detach from shared memory.");
@@ -207,16 +201,14 @@ void cleanUp(const int& shmid, const int& msqid, void* sharedMemPtr)
  * @param signal - the signal type
  */
 
-void ctrlCSignal(int signal)
-{
+void ctrlCSignal(int signal) {
 	/* Free system V resources */
 	cleanUp(shmid, msqid, sharedMemPtr);
 }
 
-int main(int argc, char** argv)
-{
+int main(int argc, char** argv) {
 	/* Signal Handler */
-	signal(SIGINT, crtlCSignal);
+	signal(SIGINT, ctrlCSignal);
 				
 	/* Initialize */
 	init(shmid, msqid, sharedMemPtr);
@@ -226,7 +218,6 @@ int main(int argc, char** argv)
 
 	/** Detach from shared memory segment, and deallocate shared memory and message queue (i.e. call cleanup) **/
 	cleanUp(shmid, msqid, sharedMemPtr);
-	
 	
 	return 0;
 }

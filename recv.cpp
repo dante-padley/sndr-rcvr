@@ -1,3 +1,8 @@
+// Eli Manzo-de Leon : 3/13/20
+// This file is responsible for receiving messages from the sender file
+// until the message received has a size fo 0. Once a message has been received,
+// the receiver will write the amount of data sent to the file recvfile.
+
 #include <sys/shm.h>
 #include <sys/msg.h>
 #include <signal.h>

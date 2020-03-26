@@ -122,7 +122,7 @@ void send(const char* fileName)
 			 perror("Error: sender unable to send data ready message.");
 			 exit(-1);
 		 }
-		 std::cout << "Message sent: " << sndMsg.size << " bytes." << std::endl;
+		 std::cout << "Sender - Message sent: " << sndMsg.size << " bytes." << std::endl;
 		
 		/* Wait until the receiver sends us a message of type RECV_DONE_TYPE telling us 
  		 * that he finished saving the memory chunk. 
@@ -146,7 +146,7 @@ void send(const char* fileName)
 		perror("Error: sender unable to send finish message.");
 	 	exit(-1);
 	}
-	std::cout << "Message sent: " << sndMsg.size << " bytes." << std::endl;
+	std::cout << "Sender - Message sent: " << sndMsg.size << " bytes." << std::endl;
 
 	/* Close the file */
 	fclose(fp);
@@ -173,7 +173,7 @@ int main(int argc, char** argv)
 	/* Cleanup */
 	cleanUp(shmid, msqid, sharedMemPtr);
 		
-	std::cout << "Process finished execution." << std::endl;
+	std::cout << "Sender finished execution." << std::endl;
 		
 	return 0;
 }

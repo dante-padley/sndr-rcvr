@@ -110,12 +110,10 @@ void mainLoop()
      * "recvfile"
      */
 		
-	std::cout << "Receiving message..." << std::endl;
 	if (msgrcv(msqid, &rcvMsg, sizeof(rcvMsg), SENDER_DATA_TYPE, 0) == -1) {
 		perror("Error: receiver unable to receive first message.");
 		exit(-1);
 	}
-	std::cout << "Message received." << std::endl;
 
 	// Update the message size.
 	msgSize = rcvMsg.size;
@@ -133,7 +131,7 @@ void mainLoop()
 			/* Save the shared memory to file */
 			if(fwrite(sharedMemPtr, sizeof(char), msgSize, fp) < 0) {
 				perror("fwrite");
-			} 
+			}
 
 			// Set message type to RECV_DONE_TYPE.
 			sndMsg.mtype = RECV_DONE_TYPE;
@@ -143,14 +141,13 @@ void mainLoop()
 				perror("Error: receiver unable to send confirmation message.");
 				exit(-1);
 			}
-			
-			std::cout << "Receiving message..." << std::endl;
+
 			// Check for message from sender.
 			if (msgrcv(msqid, &rcvMsg, sizeof(rcvMsg), SENDER_DATA_TYPE, 0) == -1) {
 				perror("Error: receiver unable to receive message.");
 				exit(-1);
 			}
-			std::cout << "Message received." << std::endl;
+	
 			
 			// Update the message size.
 			msgSize = rcvMsg.size;
@@ -212,7 +209,7 @@ int main(int argc, char** argv) {
 	/** Detach from shared memory segment, and deallocate shared memory and message queue (i.e. call cleanup) **/
 	cleanUp(shmid, msqid, sharedMemPtr);
 	
-	std::cout << "Process finished execution." << std::endl;
+	std::cout << "Receiver finished execution." << std::endl;
 	
 	return 0;
 }

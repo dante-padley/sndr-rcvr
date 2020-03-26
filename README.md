@@ -3,7 +3,7 @@ Sender and receiver processes that can pass messages both ways and data in one d
 
 CPSC 351-02 13672
 Dante Padley - dante_padley@csu.fullerton.edu
-Eli Manzo-de Leon - 
+Eli Manzo-de Leon - elimanzodeleon@csu.fullerton.edu
 
 Language -- C++
 

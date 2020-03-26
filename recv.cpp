@@ -3,6 +3,7 @@
 // until the message received has a size fo 0. Once a message has been received,
 // the receiver will write the amount of data sent to the file recvfile.
 
+#include <iostream>
 #include <sys/shm.h>
 #include <sys/msg.h>
 #include <signal.h>
@@ -32,19 +33,7 @@ const char recvFileName[] = "recvfile";
  * @param sharedMemPtr - the pointer to the shared memory
  */
 
-void init(int& shmid, int& msqid, void*& sharedMemPtr)
-{
-	
-	/* TODO: 1. Create a file called keyfile.txt containing string "Hello world" (you may do
- 		    so manually or from the code).
-	         2. Use ftok("keyfile.txt", 'a') in order to generate the key.
-		 3. Use the key in the TODO's below. Use the same key for the queue
-		    and the shared memory segment. This also serves to illustrate the difference
-		    between the key and the id used in message queues and shared memory. The id
-		    for any System V object (i.e. message queues, shared memory, and sempahores) 
-		    is unique system-wide among all System V objects. Two objects, on the other hand,
-		    may have the same key.
-	 */
+void init(int& shmid, int& msqid, void*& sharedMemPtr) {
 	 
 	// Generate a unique key for shared memory + message queue. 
 	key_t key = ftok("keyfile.txt", 'a');
@@ -83,8 +72,7 @@ void init(int& shmid, int& msqid, void*& sharedMemPtr)
 	if (msqid == -1) {
 		perror("Error: unable to create a message queue.");
 		exit(-1);
-	}
-		
+	}	
 }
  
 
@@ -97,10 +85,10 @@ void mainLoop()
 	int msgSize = 0;
 	
 	/* Receive message */
-	message rcv_msg;
+	message rcvMsg;
 	
 	/* Send message */
-	message snd_msg;
+	message sndMsg;
 	
 	/* Open the file for writing */
 	FILE* fp = fopen(recvFileName, "w");
@@ -121,14 +109,16 @@ void mainLoop()
      * NOTE: the received file will always be saved into the file called
      * "recvfile"
      */
-		 
-	if (msgrcv(msqid, &rcv_msg, sizeof(rcv_msg), SENDER_DATA_TYPE, 0) == -1) {
-		perror("Error: receiver unable to receive message.");
+		
+	std::cout << "Receiving message..." << std::endl;
+	if (msgrcv(msqid, &rcvMsg, sizeof(rcvMsg), SENDER_DATA_TYPE, 0) == -1) {
+		perror("Error: receiver unable to receive first message.");
 		exit(-1);
 	}
+	std::cout << "Message received." << std::endl;
 
 	// Update the message size.
-	msgSize = rcv_msg.size;
+	msgSize = rcvMsg.size;
 	
 	
 	/* Keep receiving until the sender set the size to 0, indicating that
@@ -143,38 +133,36 @@ void mainLoop()
 			/* Save the shared memory to file */
 			if(fwrite(sharedMemPtr, sizeof(char), msgSize, fp) < 0) {
 				perror("fwrite");
-			}
+			} 
 
 			// Set message type to RECV_DONE_TYPE.
-			snd_msg.mtype = RECV_DONE_TYPE;
+			sndMsg.mtype = RECV_DONE_TYPE;
 			
 			// Send message and check if it was successfully sent.
-			if (msgsnd(msqid, &snd_msg, sizeof(snd_msg), 0) == -1) {
+			if (msgsnd(msqid, &sndMsg, sizeof(sndMsg), 0) == -1) {
 				perror("Error: receiver unable to send confirmation message.");
 				exit(-1);
 			}
 			
+			std::cout << "Receiving message..." << std::endl;
 			// Check for message from sender.
-			if (msgrcv(msqid, &rcv_msg, sizeof(rcv_msg), SENDER_DATA_TYPE, 0) == -1) {
+			if (msgrcv(msqid, &rcvMsg, sizeof(rcvMsg), SENDER_DATA_TYPE, 0) == -1) {
 				perror("Error: receiver unable to receive message.");
 				exit(-1);
 			}
+			std::cout << "Message received." << std::endl;
 			
 			// Update the message size.
-			msgSize = rcv_msg.size;
-			
-		}
-		/* We are done */
-		else {
+			msgSize = rcvMsg.size;
+						
+		} else {
 			/* Close the file */
 			fclose(fp);
 		}
 	}
 }
 
-
-
-/**
+/*
  * Perfoms the cleanup functions
  * @param sharedMemPtr - the pointer to the shared memory
  * @param shmid - the id of the shared memory segment
@@ -223,6 +211,8 @@ int main(int argc, char** argv) {
 
 	/** Detach from shared memory segment, and deallocate shared memory and message queue (i.e. call cleanup) **/
 	cleanUp(shmid, msqid, sharedMemPtr);
+	
+	std::cout << "Process finished execution." << std::endl;
 	
 	return 0;
 }

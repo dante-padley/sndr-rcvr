@@ -1,4 +1,5 @@
 
+#include <iostream>
 #include <sys/shm.h>
 #include <sys/msg.h>
 #include <stdio.h>
@@ -21,20 +22,7 @@ void* sharedMemPtr;
  * @param msqid - the id of the shared memory
  */
 
-void init(int& shmid, int& msqid, void*& sharedMemPtr)
-{
-	/* TODO: 
-        1. Create a file called keyfile.txt containing string "Hello world" (you may do
- 		    so manually or from the code).
-	    2. Use ftok("keyfile.txt", 'a') in order to generate the key.
-		3. Use the key in the TODO's below. Use the same key for the queue
-		    and the shared memory segment. This also serves to illustrate the difference
-		    between the key and the id used in message queues and shared memory. The id
-		    for any System V objest (i.e. message queues, shared memory, and sempahores) 
-		    is unique system-wide among all SYstem V objects. Two objects, on the other hand,
-		    may have the same key.
-	 */
-
+void init(int& shmid, int& msqid, void*& sharedMemPtr) {
 	// Generate a unique key for shared memory + message queue. 
 	key_t key = ftok("keyfile.txt", 'a');
 	
@@ -45,14 +33,13 @@ void init(int& shmid, int& msqid, void*& sharedMemPtr)
 	}
 
 	/* Get the id of the shared memory segment. The size of the segment must be SHARED_MEMORY_CHUNK_SIZE. */
-	shmid = shmget(key, SHARED_MEMORY_CHUNK_SIZE, 0);
+	shmid = shmget(key, SHARED_MEMORY_CHUNK_SIZE, 0666|IPC_CREAT);
 
 	// Check for succesfull memory allocation.
 	if (shmid == -1) {
 		perror("Error: unable to find memory segment.");
 		exit(-1);
 	}
-
 	
 	/* Attach to the shared memory */
 	sharedMemPtr = shmat(shmid, (void*)0, 0);
@@ -64,15 +51,13 @@ void init(int& shmid, int& msqid, void*& sharedMemPtr)
 	}
 
 	/* Attach to the message queue */
-	msqid = msgget(key, 0);
+	msqid = msgget(key, 0666|IPC_CREAT);
 	
 	// Check for successfully getting the message queue id.
 	if (msqid == -1) {
 		perror("Error: unable to find the message queue.");
 		exit(-1);
 	}
-
-	
 }
 
 /**
@@ -82,23 +67,10 @@ void init(int& shmid, int& msqid, void*& sharedMemPtr)
  * @param msqid - the id of the message queue
  */
 
-void cleanUp(const int& shmid, const int& msqid, void* sharedMemPtr)
-{
+void cleanUp(const int& shmid, const int& msqid, void* sharedMemPtr) {
 	/* Detach from shared memory */
 	if (shmdt(sharedMemPtr) == -1) {
 		perror("Error: unable to detach from shared memory.");
-		exit(-1);
-	}
-	
-	/* Deallocate the shared memory chunk */
-	if (shmctl(shmid, IPC_RMID, NULL) == -1) {
-		perror("Error: unable to deallocate shared memory.");
-		exit(-1);
-	}
-	
-	/* Deallocate the message queue */
-	if (msgctl(msqid, IPC_RMID, NULL) == -1) {
-		perror("Error: unable to deallocate message queue.");
 		exit(-1);
 	}
 }
@@ -150,6 +122,7 @@ void send(const char* fileName)
 			 perror("Error: sender unable to send data ready message.");
 			 exit(-1);
 		 }
+		 std::cout << "Message sent: " << sndMsg.size << " bytes." << std::endl;
 		
 		/* Wait until the receiver sends us a message of type RECV_DONE_TYPE telling us 
  		 * that he finished saving the memory chunk. 
@@ -162,15 +135,19 @@ void send(const char* fileName)
 	}
 	
 
-	/** Once we are out of the above loop, we have finished sending the file.
+		/* 
+		*	Once we are out of the above loop, we have finished sending the file.
  	  * Lets tell the receiver that we have nothing more to send. We will do this by
  	  * sending a message of type SENDER_DATA_TYPE with size field set to 0. 	
 	  */
-	 if (msgsnd(msqid, &sndMsg, 0, 0) == -1){
-		 perror("Error: sender unable to send finish message.");
-		 exit(-1);
-	 }
 		
+	sndMsg.size = 0;
+	if (msgsnd(msqid, &sndMsg, sizeof(sndMsg), 0) == -1){
+		perror("Error: sender unable to send finish message.");
+	 	exit(-1);
+	}
+	std::cout << "Message sent: " << sndMsg.size << " bytes." << std::endl;
+
 	/* Close the file */
 	fclose(fp);
 	
@@ -195,6 +172,8 @@ int main(int argc, char** argv)
 	
 	/* Cleanup */
 	cleanUp(shmid, msqid, sharedMemPtr);
+		
+	std::cout << "Process finished execution." << std::endl;
 		
 	return 0;
 }
